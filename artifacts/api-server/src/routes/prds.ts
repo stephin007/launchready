@@ -214,6 +214,20 @@ router.patch("/prds/:id/tasks/:taskId", async (req, res): Promise<void> => {
   const { id: prdId, taskId } = params.data;
   const { status } = body.data;
 
+  // Verify PRD exists and taskId is a valid task within it
+  const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, prdId));
+  if (!prd) {
+    res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  const content = JSON.parse(prd.rawOutput) as ReturnType<typeof processPrd>;
+  const allTaskIds = new Set(content.userStories.flatMap((s) => s.tasks.map((t) => t.id)));
+  if (!allTaskIds.has(taskId)) {
+    res.status(404).json({ error: "Task not found in PRD" });
+    return;
+  }
+
   const existing = await db
     .select()
     .from(taskStatusTable)
