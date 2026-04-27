@@ -61,10 +61,10 @@ export default function Home() {
       onSuccess: (prd) => {
         setLocation(`/prd/${prd.id}`);
       },
-      onError: (error) => {
+      onError: () => {
         toast({
           title: "Generation failed",
-          description: error.error || "An unexpected error occurred.",
+          description: "An unexpected error occurred. Please try again.",
           variant: "destructive",
         });
       }

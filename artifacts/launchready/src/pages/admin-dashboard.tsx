@@ -55,12 +55,23 @@ export default function AdminDashboard() {
     tickLine: false,
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipPayloadEntry {
+    color?: string;
+    fill?: string;
+    name: string;
+    value: number;
+  }
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayloadEntry[];
+    label?: string;
+  }
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-[var(--bg-elevated)] border border-[var(--border-default)] p-3 rounded shadow-lg text-sm">
           <p className="text-[var(--text-primary)] font-medium mb-1">{label}</p>
-          <p style={{ color: payload[0].color || payload[0].fill }}>
+          <p style={{ color: payload[0].color ?? payload[0].fill }}>
             {payload[0].name}: {payload[0].value}
           </p>
         </div>

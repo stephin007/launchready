@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout";
 import { PrdContentDisplay } from "@/components/prd-content-display";
-import { useGetPrd, useRegeneratePrd, useUpdateTaskStatus, getGetPrdQueryKey, useGetPrdVersions, UpdateTaskStatusBodyStatus } from "@workspace/api-client-react";
+import { useGetPrd, useRegeneratePrd, useUpdateTaskStatus, getGetPrdQueryKey, useGetPrdVersions, getGetPrdVersionsQueryKey, UpdateTaskStatusBodyStatus } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +20,7 @@ export default function PrdView() {
   });
 
   const { data: versions } = useGetPrdVersions(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, queryKey: getGetPrdVersionsQueryKey(id) }
   });
 
   const regeneratePrd = useRegeneratePrd();

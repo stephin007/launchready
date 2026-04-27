@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CheckCircle2, ChevronDown, ChevronRight, Circle, Clock } from "lucide-react";
-import { PrdDetail, TaskItem, UpdateTaskStatusBodyStatus } from "@workspace/api-client-react";
+import { PrdDetail, TaskItem, UserStory, UpdateTaskStatusBodyStatus } from "@workspace/api-client-react";
 
 interface PrdContentDisplayProps {
   prd: PrdDetail;
@@ -16,7 +16,7 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
   const { content } = prd;
 
   // Group tasks by sprint
-  const sprints: Record<number, { userStory: any; task: TaskItem }[]> = {};
+  const sprints: Record<number, { userStory: UserStory; task: TaskItem }[]> = {};
   content.userStories.forEach(us => {
     us.tasks.forEach(task => {
       if (!sprints[task.sprintNumber]) {
