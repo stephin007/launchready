@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LaunchReady API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: prds
+    description: PRD operations
+  - name: admin
+    description: Admin operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,192 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /generate:
+    post:
+      operationId: generatePrd
+      tags: [prds]
+      summary: Generate a new PRD
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePrdBody"
+      responses:
+        "201":
+          description: PRD created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrdDetail"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prds:
+    get:
+      operationId: listPrds
+      tags: [prds]
+      summary: List all PRDs
+      responses:
+        "200":
+          description: List of PRDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PrdSummary"
+
+  /prds/{id}:
+    get:
+      operationId: getPrd
+      tags: [prds]
+      summary: Get a PRD by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PRD found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrdDetail"
+        "404":
+          description: PRD not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prds/{id}/regenerate:
+    post:
+      operationId: regeneratePrd
+      tags: [prds]
+      summary: Regenerate a PRD (creates new version)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PRD regenerated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrdDetail"
+        "404":
+          description: PRD not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prds/{id}/tasks/{taskId}:
+    patch:
+      operationId: updateTaskStatus
+      tags: [prds]
+      summary: Update task status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskStatusBody"
+      responses:
+        "200":
+          description: Task status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskStatusRecord"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /prds/{id}/versions:
+    get:
+      operationId: getPrdVersions
+      tags: [prds]
+      summary: Get version history for a PRD
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of PRD versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PrdVersion"
+
+  /prds/share/{token}:
+    get:
+      operationId: getSharedPrd
+      tags: [prds]
+      summary: Get a PRD by share token (public read-only)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PRD found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrdDetail"
+        "404":
+          description: PRD not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +224,303 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    GeneratePrdBody:
+      type: object
+      properties:
+        problem:
+          type: string
+        audience:
+          type: string
+        success:
+          type: string
+        productName:
+          type: ["string", "null"]
+      required:
+        - problem
+        - audience
+        - success
+
+    TaskItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        dependsOn:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        effort:
+          type: string
+        effortScore:
+          type: integer
+        isBlocked:
+          type: boolean
+        blockedBy:
+          type: array
+          items:
+            type: string
+        sprintNumber:
+          type: integer
+      required:
+        - id
+        - title
+        - description
+        - dependsOn
+        - status
+        - effort
+        - effortScore
+        - isBlocked
+        - blockedBy
+        - sprintNumber
+
+    UserStory:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        asA:
+          type: string
+        iWant:
+          type: string
+        soThat:
+          type: string
+        acceptanceCriteria:
+          type: array
+          items:
+            type: string
+        priority:
+          type: string
+        priorityScore:
+          type: integer
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskItem"
+      required:
+        - id
+        - title
+        - asA
+        - iWant
+        - soThat
+        - acceptanceCriteria
+        - priority
+        - priorityScore
+        - tasks
+
+    PrdContent:
+      type: object
+      properties:
+        title:
+          type: string
+        summary:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+        successMetrics:
+          type: array
+          items:
+            type: string
+        userStories:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserStory"
+      required:
+        - title
+        - summary
+        - goals
+        - successMetrics
+        - userStories
+
+    PrdDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        problem:
+          type: ["string", "null"]
+        audience:
+          type: ["string", "null"]
+        successCriteria:
+          type: ["string", "null"]
+        productName:
+          type: ["string", "null"]
+        shareToken:
+          type: string
+        createdAt:
+          type: string
+        content:
+          $ref: "#/components/schemas/PrdContent"
+      required:
+        - id
+        - title
+        - shareToken
+        - createdAt
+        - content
+
+    PrdSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        problem:
+          type: ["string", "null"]
+        productName:
+          type: ["string", "null"]
+        shareToken:
+          type: string
+        createdAt:
+          type: string
+        totalTasks:
+          type: integer
+        priorityMix:
+          type: object
+          properties:
+            P1:
+              type: integer
+            P2:
+              type: integer
+            P3:
+              type: integer
+          required:
+            - P1
+            - P2
+            - P3
+      required:
+        - id
+        - title
+        - shareToken
+        - createdAt
+        - totalTasks
+        - priorityMix
+
+    UpdateTaskStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [todo, in-progress, done]
+      required:
+        - status
+
+    TaskStatusRecord:
+      type: object
+      properties:
+        id:
+          type: string
+        prdId:
+          type: string
+        taskId:
+          type: string
+        status:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - prdId
+        - taskId
+        - status
+        - updatedAt
+
+    PrdVersion:
+      type: object
+      properties:
+        id:
+          type: integer
+        prdId:
+          type: string
+        versionNumber:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - prdId
+        - versionNumber
+        - createdAt
+
+    DayCount:
+      type: object
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+      required:
+        - date
+        - count
+
+    AdminStats:
+      type: object
+      properties:
+        totalPrds:
+          type: integer
+        totalTasks:
+          type: integer
+        avgEffortScore:
+          type: number
+        prdsThisWeek:
+          type: integer
+        prdsPerDay:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayCount"
+        priorityBreakdown:
+          type: object
+          properties:
+            P1:
+              type: integer
+            P2:
+              type: integer
+            P3:
+              type: integer
+          required:
+            - P1
+            - P2
+            - P3
+        effortDistribution:
+          type: object
+          properties:
+            S:
+              type: integer
+            M:
+              type: integer
+            L:
+              type: integer
+            XL:
+              type: integer
+          required:
+            - S
+            - M
+            - L
+            - XL
+      required:
+        - totalPrds
+        - totalTasks
+        - avgEffortScore
+        - prdsThisWeek
+        - prdsPerDay
+        - priorityBreakdown
+        - effortDistribution
