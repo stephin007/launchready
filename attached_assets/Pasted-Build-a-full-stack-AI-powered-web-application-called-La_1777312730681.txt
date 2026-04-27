@@ -1,0 +1,462 @@
+Build a full-stack AI-powered web application called "LaunchReady" — a PRD and Sprint Planning tool built specifically for non-technical founders who need to communicate ideas to engineering teams.
+
+---
+
+## PRODUCT VISION
+LaunchReady lets a non-technical founder answer 3 plain-English questions and get back a complete, engineering-ready Product Requirements Document with user stories, tasks, acceptance criteria, effort estimates, priorities, and sprint groupings — in 30 seconds.
+
+Tagline: "Turn your idea into an engineering-ready plan in 30 seconds."
+
+---
+
+## TECH STACK
+- Frontend: React (Vite)
+- Backend: Node.js + Express
+- Database: SQLite using better-sqlite3
+- AI: OpenRouter API (NOT OpenAI directly)
+  - Base URL: https://openrouter.ai/api/v1/chat/completions
+  - Model: openai/gpt-4o
+  - Auth header: Authorization: Bearer ${OPENROUTER_API_KEY}
+  - Also send: HTTP-Referer: https://launchready.app and X-Title: LaunchReady
+- Styling: Tailwind CSS + custom CSS variables from the design system below
+- Icons: Lucide React
+- Charts: Recharts
+- Version Control: Git with minimum 6 commits, one per stage
+
+---
+
+## DESIGN SYSTEM — LINEAR-INSPIRED (FOLLOW EXACTLY)
+
+This app must implement the following design system precisely. Every component must reference these tokens.
+
+### Font Setup
+- Import Inter Variable from Google Fonts
+- Apply globally: font-feature-settings: "cv01", "ss03"
+- Monospace: Berkeley Mono with fallbacks: ui-monospace, SF Mono, Menlo
+
+### CSS Variables (inject into :root)
+```css
+:root {
+  /* Backgrounds */
+  --bg-base: #08090a;
+  --bg-panel: #0f1011;
+  --bg-surface: #191a1b;
+  --bg-elevated: #28282c;
+
+  /* Text */
+  --text-primary: #f7f8f8;
+  --text-secondary: #d0d6e0;
+  --text-muted: #8a8f98;
+  --text-subtle: #62666d;
+
+  /* Brand */
+  --accent: #5e6ad2;
+  --accent-bright: #7170ff;
+  --accent-hover: #828fff;
+
+  /* Borders */
+  --border-default: rgba(255,255,255,0.08);
+  --border-subtle: rgba(255,255,255,0.05);
+  --border-solid: #23252a;
+
+  /* Status */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+
+  /* Priority */
+  --p1: #ef4444;
+  --p2: #f59e0b;
+  --p3: #10b981;
+
+  /* Effort */
+  --effort-s: #10b981;
+  --effort-m: #7170ff;
+  --effort-l: #f59e0b;
+  --effort-xl: #ef4444;
+}
+```
+
+### Typography Rules
+- Display (hero): 48px, weight 510, line-height 1.00, letter-spacing -1.056px
+- Heading 1: 32px, weight 400, letter-spacing -0.704px
+- Heading 2: 24px, weight 400, letter-spacing -0.288px
+- Heading 3: 20px, weight 590, letter-spacing -0.24px
+- Body: 16px, weight 400, line-height 1.50
+- Body emphasis (UI labels): 16px, weight 510
+- Small: 15px, weight 400, letter-spacing -0.165px
+- Caption: 13px, weight 400-510, letter-spacing -0.13px
+- Label/badge: 12px, weight 510
+- Micro: 11px, weight 510
+
+### Component Rules
+
+**Buttons**
+- Primary: background #5e6ad2, text #fff, padding 8px 16px, radius 6px, hover: #828fff
+- Ghost: background rgba(255,255,255,0.02), border 1px solid rgba(255,255,255,0.08), text #e2e4e7, radius 6px
+- Subtle: background rgba(255,255,255,0.04), text #d0d6e0, radius 6px
+
+**Cards**
+- Background: rgba(255,255,255,0.02) — NEVER solid
+- Border: 1px solid rgba(255,255,255,0.08)
+- Radius: 8px (standard), 12px (featured panels)
+- Hover: opacity increases slightly
+
+**Inputs**
+- Background: rgba(255,255,255,0.02)
+- Border: 1px solid rgba(255,255,255,0.08)
+- Text: #d0d6e0, placeholder: #8a8f98
+- Padding: 12px 14px, radius 6px
+- Focus: border color shifts to var(--accent-bright)
+
+**Badges / Pills**
+- Priority P1: background rgba(239,68,68,0.15), text #ef4444, radius 4px, font 11px weight 510
+- Priority P2: background rgba(245,158,11,0.15), text #f59e0b, radius 4px
+- Priority P3: background rgba(16,185,129,0.15), text #10b981, radius 4px
+- Effort S/M/L/XL: pill shape, 9999px radius, matching effort color with 0.15 opacity bg
+- Sprint badge: background rgba(113,112,255,0.15), text #7170ff, radius 4px
+
+**Navigation**
+- Background: #0f1011, sticky
+- Border-bottom: 1px solid rgba(255,255,255,0.05)
+- Logo: bold, Inter 16px weight 590, #f7f8f8
+- Links: 13px weight 510, #d0d6e0, hover #f7f8f8
+
+**Sprint Cards**
+- Full card with header showing sprint number in accent color
+- Tasks listed as rows inside with status toggles
+- Drag-to-reorder feel (visual only is fine)
+
+**Depth & Elevation**
+- Use background luminance stepping NOT drop shadows
+- Level 0: #08090a (page)
+- Level 1: #0f1011 (panels)
+- Level 2: #191a1b (cards)
+- Level 3: #28282c (hover/elevated)
+- When shadows needed: rgba(0,0,0,0.4) 0px 2px 4px
+
+### Design Principles (DO NOT BREAK THESE)
+- Dark-mode native — no light mode needed
+- Never use pure white (#ffffff) for text — use #f7f8f8
+- Never use solid opaque button backgrounds except for primary CTA
+- Never display raw JSON anywhere in the UI
+- Brand indigo (#5e6ad2 / #7170ff) is the ONLY chromatic color — everything else is grayscale
+- Semi-transparent white borders only — never solid dark borders on dark backgrounds
+- Inter weight max is 590 — never use 700 (bold)
+- font-feature-settings: "cv01", "ss03" must be on ALL Inter text
+
+---
+
+## APPLICATION STRUCTURE
+
+/launchready
+  /client          ← React frontend (Vite)
+    /src
+      /components
+        InputForm.jsx
+        PRDOutput.jsx
+        SprintBoard.jsx
+        ChangeLog.jsx
+        AdminDashboard.jsx
+        Navbar.jsx
+        TaskCard.jsx
+        BadgePriority.jsx
+        BadgeEffort.jsx
+      /pages
+        Home.jsx
+        PRDView.jsx
+        Admin.jsx
+        SharedPRD.jsx
+      App.jsx
+      main.jsx
+  /server          ← Node.js + Express backend
+    index.js
+    /routes
+      generate.js
+      prds.js
+      admin.js
+    /logic
+      priorityEngine.js
+      effortEstimator.js
+      sprintAllocator.js
+      dependencyDetector.js
+    /db
+      database.js
+      schema.sql
+  .env
+  package.json
+  README.md
+
+---
+
+## CORE USER FLOW
+
+1. Founder lands on Home — bold hero, tagline, "Generate PRD" CTA
+2. Fills in 3 plain-English questions (no jargon):
+   - "What problem does your feature solve?"
+   - "Who is this feature for?"
+   - "What does success look like for this feature?"
+3. Optional: product name field
+4. Hits "Generate PRD" — animated loading state with status messages:
+   - "Reading your idea..."
+   - "Building user stories..."
+   - "Allocating sprints..."
+5. Gets back a fully structured PRD page with:
+   - Product title + summary
+   - Goals & success metrics
+   - User stories (each with acceptance criteria)
+   - Engineering tasks (linked to stories, with acceptance criteria)
+   - Effort badges (S/M/L/XL)
+   - Priority labels (P1/P2/P3 color coded)
+   - Sprint groupings (Sprint 1, 2, 3 cards)
+6. Can mark tasks as Todo / In Progress / Done (persisted to DB, shown inline)
+7. Can copy a shareable link to this PRD (one click)
+8. Can export PRD as Markdown (triggers browser download)
+9. Every regeneration saves a version — viewable as a Change Log timeline
+
+---
+
+## BACKEND API ROUTES
+
+POST /api/generate
+- Accepts: { problem, audience, success, productName? }
+- Calls OpenRouter API with structured prompt
+- Runs output through Logic Layer
+- Saves to SQLite
+- Returns: full structured PRD object
+
+GET /api/prds
+- Returns all PRDs (for admin + history)
+
+GET /api/prds/:id
+- Returns single PRD by ID
+
+GET /api/prds/share/:token
+- Returns PRD by share token (public, read-only)
+
+PATCH /api/prds/:id/tasks/:taskId
+- Updates task status (todo/in-progress/done)
+
+POST /api/prds/:id/regenerate
+- Re-runs generation, saves new version to prd_versions
+
+GET /api/admin/stats
+- Returns: total PRDs, total tasks, avg effort score, PRDs per day (last 7), priority breakdown
+
+---
+
+## AI PROMPT ENGINEERING
+
+When calling OpenRouter, use this exact system + user prompt:
+
+SYSTEM PROMPT:
+"You are a senior product manager and engineering lead. Your job is to take a non-technical founder's raw idea and convert it into a structured, engineering-ready Product Requirements Document (PRD). Write in plain English — avoid corporate jargon. Always respond in valid JSON only. No markdown, no explanations, no backticks, just the raw JSON object."
+
+USER PROMPT (template — fill in variables):
+"A founder wants to build a feature:
+
+Problem it solves: {problem}
+Who it's for: {audience}
+What success looks like: {success}
+Product name (optional): {productName}
+
+Generate a complete PRD as a JSON object with EXACTLY this structure:
+{
+  'title': 'concise feature name',
+  'summary': '2-3 sentence product summary in plain English',
+  'goals': ['3-4 measurable goals'],
+  'successMetrics': ['3-4 specific KPIs with numbers where possible'],
+  'userStories': [
+    {
+      'id': 'US-1',
+      'title': 'short story title',
+      'asA': 'user type',
+      'iWant': 'the action they want to do',
+      'soThat': 'the benefit they get',
+      'acceptanceCriteria': [
+        'This is done when: [specific condition]',
+        'This is done when: [specific condition]',
+        'This is done when: [specific condition]'
+      ],
+      'tasks': [
+        {
+          'id': 'T-1',
+          'title': 'specific engineering task title',
+          'description': 'what needs to be built',
+          'dependsOn': [],
+          'status': 'todo'
+        }
+      ]
+    }
+  ]
+}
+
+Generate 3-5 user stories. Each story should have 3-5 tasks. Make tasks specific and actionable for an engineering team."
+
+---
+
+## LOGIC LAYER
+
+Run ALL of this AFTER the AI returns its JSON — this is pure JS logic.
+
+### effortEstimator.js
+Score each task and assign S/M/L/XL:
+```js
+const keywords = {
+  S: ['copy', 'text', 'label', 'color', 'icon', 'rename', 'update', 'tooltip', 'placeholder'],
+  M: ['form', 'button', 'page', 'component', 'display', 'list', 'modal', 'dropdown', 'filter', 'sort'],
+  L: ['api', 'integrate', 'database', 'auth', 'logic', 'algorithm', 'endpoint', 'schema', 'hook', 'state'],
+  XL: ['payment', 'real-time', 'ml', 'infrastructure', 'migration', 'websocket', 'oauth', 'encryption', 'search']
+};
+// Match task title + description against keywords, default M
+// Add: effort (S/M/L/XL) and effortScore (1/2/3/4) to each task
+```
+
+### priorityEngine.js
+Score each user story and assign P1/P2/P3:
+```js
+// Rules (apply in order):
+// 1. If story title/description contains: 'login', 'auth', 'onboard', 'setup', 'account' → P1
+// 2. If story has any XL effort tasks → P1
+// 3. If story references success metrics keywords → +2 score points
+// 4. If story has only S effort tasks → P3
+// 5. Default → P2
+// Add: priority ('P1'/'P2'/'P3') and priorityScore (1-10) to each story
+```
+
+### dependencyDetector.js
+```js
+// Parse dependsOn arrays from each task
+// Build a dependency map
+// Flag any tasks whose dependencies aren't resolved → add blockedBy field
+// Add: isBlocked (boolean), blockedBy (array of task IDs) to each task
+```
+
+### sprintAllocator.js
+```js
+// Sprint 1: All P1 stories + tasks with no dependencies
+// Sprint 2: P2 stories + tasks that depend on Sprint 1 tasks
+// Sprint 3: P3 stories + XL tasks that aren't critical path
+// Add: sprintNumber (1/2/3) to each task
+```
+
+---
+
+## DATABASE SCHEMA (SQLite)
+
+```sql
+CREATE TABLE prds (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  problem TEXT,
+  audience TEXT,
+  success_criteria TEXT,
+  product_name TEXT,
+  raw_output TEXT NOT NULL,
+  share_token TEXT UNIQUE NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE task_status (
+  id TEXT PRIMARY KEY,
+  prd_id TEXT NOT NULL,
+  task_id TEXT NOT NULL,
+  status TEXT DEFAULT 'todo',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (prd_id) REFERENCES prds(id)
+);
+
+CREATE TABLE prd_versions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  prd_id TEXT NOT NULL,
+  version_number INTEGER NOT NULL,
+  snapshot TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (prd_id) REFERENCES prds(id)
+);
+```
+
+---
+
+## ADMIN DASHBOARD (/admin)
+
+Display using Recharts — all data from real DB:
+- 4 stat cards: Total PRDs | Total Tasks | Avg Effort Score | PRDs This Week
+- Bar chart: PRDs generated per day (last 7 days)
+- Donut chart: Priority breakdown (P1/P2/P3)
+- Bar chart: Effort distribution (S/M/L/XL)
+- Table: All PRDs — columns: Title | Date | Tasks | Priority Mix | Share Link | View
+
+All charts must use the design system colors. No raw JSON anywhere.
+
+---
+
+## SHAREABLE PRD LINK
+- Each PRD gets a unique share_token (uuid) at creation
+- Public route: /share/:token
+- Read-only view — shows full PRD, no edit controls
+- Copy link button on main PRD view copies window.location with share token
+
+---
+
+## MARKDOWN EXPORT
+On "Export as Markdown" click:
+- Convert PRD JSON to clean .md
+- Trigger browser download as {title}.md
+- Format:
+{title}
+Summary: {summary}
+Goals
+
+{goal1}
+{goal2}
+
+Success Metrics
+
+{metric1}
+
+User Stories
+US-1: {title}
+As a {asA}, I want {iWant}, so that {soThat}
+Acceptance Criteria:
+
+{criteria1}
+
+Tasks (Sprint {n} | {effort} | {priority})
+
+ {task title} — {description}
+
+
+---
+
+## GIT COMMIT STRUCTURE
+Commit 1: "feat: project scaffold — Vite + Express + SQLite + folder structure"
+Commit 2: "feat: founder input UI — 3-question form, loading states, PRD output skeleton"
+Commit 3: "feat: OpenRouter AI integration — structured PRD JSON generation"
+Commit 4: "feat: logic layer — effort estimator, priority engine, dependency detector, sprint allocator"
+Commit 5: "feat: database — PRD persistence, task status updates, versioning, shareable links"
+Commit 6: "feat: admin dashboard — stats cards, charts, PRD table, markdown export"
+
+---
+
+## ENVIRONMENT VARIABLES (.env)
+OPENROUTER_API_KEY=your_key_here
+PORT=3000
+
+---
+
+## CRITICAL RULES — NEVER BREAK THESE
+1. Never display raw JSON to the user anywhere — ever
+2. All loading states must have a spinner + status message
+3. Mobile responsive at all breakpoints
+4. Every feature must be wired end-to-end (input → backend → DB → output)
+5. Admin dashboard must pull from real DB data, not mocked data
+6. The logic layer must visibly affect the output — sprint numbers, effort badges, priority labels must all show
+7. font-feature-settings: "cv01", "ss03" must be applied to ALL Inter text globally
+8. Never use weight 700 — maximum weight is 590
+9. Never use pure white #ffffff for text — always #f7f8f8
+10. Use uuid package for all IDs and share tokens
+11. PRD output page must feel like a real product tool — collapsible sprint cards, color-coded badges, clean task rows
+
+That's the full updated prompt. The Linear DESIGN.md is now fully baked in — exact hex values, opacity levels, typography weights, spacing rules, component patterns — everything Replit Agent needs to produce a genuinely polished UI instead of generic Tailwind defaults.
+Once you paste this and it scaffolds, come back and tell me what it built. We'll debug and refine from there.
