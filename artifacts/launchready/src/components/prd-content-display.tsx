@@ -88,6 +88,84 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
         </Card>
       </div>
 
+      <div className="space-y-4">
+        <h2 className="text-2xl font-medium text-[var(--text-primary)]">User Stories</h2>
+        <div className="space-y-2">
+          {content.userStories.map((story, i) => (
+            <Collapsible key={story.id} defaultOpen={false}>
+              <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-[var(--border-default)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.025)] transition-colors text-left [&[data-state=open]]:rounded-b-none [&[data-state=open]]:border-b-0 [&[data-state=open]>div>svg]:rotate-90">
+                <div className="flex items-center gap-3 min-w-0">
+                  <ChevronRight className="w-4 h-4 text-[var(--text-subtle)] shrink-0 transition-transform duration-200" />
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      fontFamily: "ui-monospace, SF Mono, Menlo, monospace",
+                      letterSpacing: "0.05em",
+                      fontWeight: 500,
+                      color: "var(--text-subtle)",
+                      textTransform: "uppercase",
+                      flexShrink: 0,
+                    }}
+                  >
+                    US-{i + 1}
+                  </span>
+                  <span className="text-sm font-medium text-[var(--text-primary)] truncate">{story.title}</span>
+                </div>
+                <Badge variant="outline" className={`border-0 shrink-0 ml-3 ${getPriorityColor(story.priority)}`}>
+                  {story.priority}
+                </Badge>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="border border-t-0 border-[var(--border-default)] rounded-b-lg bg-[rgba(255,255,255,0.01)] overflow-hidden">
+                <div className="px-5 py-4 space-y-4">
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                    As a <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{story.asA}</span>,
+                    {" "}I want <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{story.iWant}</span>,
+                    {" "}so that <span style={{ color: "var(--text-primary)", fontWeight: 500 }}>{story.soThat}</span>.
+                  </p>
+                  {story.acceptanceCriteria && story.acceptanceCriteria.length > 0 && (
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          fontWeight: 600,
+                          color: "var(--text-subtle)",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        Acceptance Criteria
+                      </p>
+                      <ul className="space-y-1.5">
+                        {story.acceptanceCriteria.map((criterion, j) => (
+                          <li key={j} className="flex items-start gap-2.5 text-sm" style={{ color: "var(--text-secondary)" }}>
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "16px",
+                                height: "16px",
+                                borderRadius: "3px",
+                                border: "1.5px solid rgba(255,255,255,0.15)",
+                                flexShrink: 0,
+                                marginTop: "2px",
+                              }}
+                            />
+                            <span>{criterion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-6">
         <h2 className="text-2xl font-medium text-[var(--text-primary)]">Sprint Plan</h2>
         
