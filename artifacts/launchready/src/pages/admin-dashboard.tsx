@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useListPrds } from "@workspace/api-client-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format, parseISO } from "date-fns";
-import { Loader2, FileText, CheckCircle2, Link as LinkIcon, Eye } from "lucide-react";
+import { Loader2, FileText, CheckCircle2, Link as LinkIcon, Eye, Zap } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 
@@ -80,6 +80,8 @@ export default function AdminDashboard() {
     return null;
   };
 
+  const isEmpty = stats.totalPrds === 0;
+
   return (
     <Layout>
       <div className="flex-1 w-full max-w-6xl mx-auto px-6 py-8 space-y-8">
@@ -88,7 +90,31 @@ export default function AdminDashboard() {
           <p className="text-[var(--text-muted)] mt-1">Overview of all generated PRDs and tasks.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {isEmpty ? (
+          <div
+            className="flex flex-col items-center justify-center py-24 text-center rounded-xl border border-dashed"
+            style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.01)" }}
+          >
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
+              style={{ background: "rgba(94,106,210,0.12)", border: "1px solid rgba(94,106,210,0.2)" }}
+            >
+              <Zap size={24} style={{ color: "var(--accent-bright)" }} />
+            </div>
+            <p className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>No PRDs yet</p>
+            <p className="text-sm mt-1 max-w-xs" style={{ color: "var(--text-muted)" }}>
+              Generate your first PRD to see stats, charts, and your full planning history here.
+            </p>
+            <Link
+              href="/"
+              className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors"
+              style={{ background: "var(--accent)" }}
+            >
+              Generate your first PRD
+            </Link>
+          </div>
+        ) : (
+        <><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-[rgba(255,255,255,0.02)] border-[var(--border-default)]">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-[var(--text-secondary)]">Total PRDs</CardTitle>
@@ -284,6 +310,7 @@ export default function AdminDashboard() {
             </Table>
           </div>
         </Card>
+        </>)}
       </div>
     </Layout>
   );

@@ -205,15 +205,29 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
       <div className="space-y-6">
         <h2 className="text-2xl font-medium text-[var(--text-primary)]">Sprint Plan</h2>
 
-        {sprintNumbers.map(sprintNum => (
+        {sprintNumbers.map(sprintNum => {
+          const sprintTasks = sprints[sprintNum];
+          const effortTotal = sprintTasks.reduce((sum, { task }) => sum + (task.effortScore ?? 0), 0);
+          return (
           <Collapsible key={sprintNum} defaultOpen className="border border-[var(--border-default)] rounded-lg bg-[rgba(255,255,255,0.01)] overflow-hidden">
             <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[rgba(255,255,255,0.02)] transition-colors [&[data-state=open]>div>svg]:rotate-90">
               <div className="flex items-center gap-3">
                 <ChevronRight className="w-5 h-5 text-[var(--text-muted)] transition-transform duration-200" />
                 <h3 className="text-lg font-medium text-[var(--text-primary)]">Sprint {sprintNum}</h3>
                 <Badge variant="outline" className="bg-[rgba(113,112,255,0.15)] text-[var(--accent-bright)] border-0 ml-2">
-                  {sprints[sprintNum].length} tasks
+                  {sprintTasks.length} tasks
                 </Badge>
+                {effortTotal > 0 && (
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-subtle)",
+                      fontFamily: "ui-monospace, SF Mono, Menlo, monospace",
+                    }}
+                  >
+                    ~{effortTotal} pts
+                  </span>
+                )}
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent className="border-t border-[var(--border-default)]">
@@ -269,7 +283,8 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
               </div>
             </CollapsibleContent>
           </Collapsible>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

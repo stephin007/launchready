@@ -133,108 +133,114 @@ export default function Home() {
         </div>
 
         <div className="bg-[rgba(255,255,255,0.02)] border border-[var(--border-default)] rounded-xl p-6 md:p-8 shadow-[rgba(0,0,0,0.4)_0px_2px_4px] mb-16">
-          {generatePrd.isPending ? (
-            <div className="h-[400px] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
-              <div className="w-16 h-16 rounded-full bg-[rgba(113,112,255,0.1)] flex items-center justify-center mb-4">
-                <Loader2 className="w-8 h-8 text-[var(--accent-bright)] animate-spin" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-medium text-[var(--text-primary)] transition-all duration-300">
-                  {LOADING_MESSAGES[loadingStep]}
-                </h3>
-                <p className="text-[var(--text-muted)] text-sm">
-                  This usually takes about 30 seconds.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                  control={form.control}
-                  name="problem"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base text-[var(--text-primary)]">What problem does your feature solve?</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="e.g. Users struggle to track their daily water intake because existing apps are too complex." 
-                          className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[var(--status-danger)]" />
-                    </FormItem>
-                  )}
-                />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <FormField
+                control={form.control}
+                name="problem"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base text-[var(--text-primary)]">What problem does your feature solve?</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. Users struggle to track their daily water intake because existing apps are too complex."
+                        className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
+                        disabled={generatePrd.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[var(--status-danger)]" />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="audience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base text-[var(--text-primary)]">Who is this feature for?</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="e.g. Health-conscious professionals who want a simple, one-tap way to log water." 
-                          className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[var(--status-danger)]" />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="audience"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base text-[var(--text-primary)]">Who is this feature for?</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. Health-conscious professionals who want a simple, one-tap way to log water."
+                        className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
+                        disabled={generatePrd.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[var(--status-danger)]" />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="success"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base text-[var(--text-primary)]">What does success look like for this feature?</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="e.g. 80% of users who log water once return to log it again the next day." 
-                          className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[var(--status-danger)]" />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="success"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-base text-[var(--text-primary)]">What does success look like for this feature?</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. 80% of users who log water once return to log it again the next day."
+                        className="min-h-[100px] bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] resize-y text-base"
+                        disabled={generatePrd.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[var(--status-danger)]" />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="productName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[var(--text-secondary)]">Product name <span className="text-[var(--text-muted)] font-normal">(optional)</span></FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g. HydroTrack" 
-                          className="bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] text-base"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage className="text-[var(--status-danger)]" />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="productName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[var(--text-secondary)]">Product name <span className="text-[var(--text-muted)] font-normal">(optional)</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. HydroTrack"
+                        className="bg-[rgba(255,255,255,0.02)] border-[var(--border-default)] focus-visible:ring-[var(--accent)] text-base"
+                        disabled={generatePrd.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-[var(--status-danger)]" />
+                  </FormItem>
+                )}
+              />
 
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-base font-medium h-12"
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={generatePrd.isPending}
+                  className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-base font-medium h-12 disabled:opacity-80"
                   data-testid="button-generate"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Generate PRD
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  {generatePrd.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Generate PRD
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </>
+                  )}
                 </Button>
-              </form>
-            </Form>
-          )}
+
+                {generatePrd.isPending && (
+                  <p className="text-center text-sm text-[var(--text-muted)] animate-pulse">
+                    {LOADING_MESSAGES[loadingStep]}
+                  </p>
+                )}
+              </div>
+            </form>
+          </Form>
         </div>
       </div>
     </Layout>
