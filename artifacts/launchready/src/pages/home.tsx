@@ -73,17 +73,66 @@ export default function Home() {
 
   return (
     <Layout>
-      <div className="flex-1 w-full max-w-2xl mx-auto px-6 py-16 flex flex-col">
-        <div className="mb-12 text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-medium tracking-tight text-[var(--text-primary)]">
-            Turn your idea into an engineering-ready plan in 30 seconds.
-          </h1>
-          <p className="text-lg text-[var(--text-muted)] max-w-lg mx-auto">
-            Answer three questions. Get a complete Product Requirements Document with user stories, estimated effort, and sprint allocations.
-          </p>
+      <div className="flex-1 w-full max-w-2xl mx-auto px-6 flex flex-col">
+
+        {/* Hero section */}
+        <div className="pt-20 pb-14 text-center flex flex-col items-center">
+          {/* Glow behind headline */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: "10%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "600px",
+              height: "300px",
+              background: "radial-gradient(ellipse at center, rgba(94,106,210,0.18) 0%, rgba(94,106,210,0.06) 50%, transparent 75%)",
+              filter: "blur(32px)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
+
+          <div className="relative z-10 space-y-5">
+            <h1
+              className="text-4xl md:text-[3.25rem] leading-[1.1] font-medium tracking-tight"
+              style={{ color: "var(--text-primary)" }}
+            >
+              From idea to{" "}
+              <span style={{ whiteSpace: "nowrap" }}>engineering-ready</span>
+              <br />
+              plan in 30 seconds
+            </h1>
+
+            <p className="text-lg max-w-xl mx-auto leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Answer 3 questions. Get a complete PRD, user stories, sprint plan and engineering tasks — instantly.
+            </p>
+
+            {/* Feature pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              {["AI-Generated PRDs", "Sprint Allocation", "Shareable Links"].map((label) => (
+                <span
+                  key={label}
+                  style={{
+                    background: "rgba(94,106,210,0.10)",
+                    border: "1px solid rgba(94,106,210,0.28)",
+                    color: "var(--accent-bright)",
+                    fontSize: "0.8125rem",
+                    fontWeight: 500,
+                    padding: "4px 12px",
+                    borderRadius: "999px",
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="bg-[rgba(255,255,255,0.02)] border border-[var(--border-default)] rounded-xl p-6 md:p-8 shadow-[rgba(0,0,0,0.4)_0px_2px_4px]">
+        <div className="bg-[rgba(255,255,255,0.02)] border border-[var(--border-default)] rounded-xl p-6 md:p-8 shadow-[rgba(0,0,0,0.4)_0px_2px_4px] mb-16">
           {generatePrd.isPending ? (
             <div className="h-[400px] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-500">
               <div className="w-16 h-16 rounded-full bg-[rgba(113,112,255,0.1)] flex items-center justify-center mb-4">
