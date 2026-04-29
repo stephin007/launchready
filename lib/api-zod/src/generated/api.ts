@@ -165,6 +165,13 @@ export const UpdateTaskStatusResponse = zod.object({
 });
 
 /**
+ * @summary Delete a PRD and all its data
+ */
+export const DeletePrdParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
  * @summary Get version history for a PRD
  */
 export const GetPrdVersionsParams = zod.object({
@@ -178,6 +185,14 @@ export const GetPrdVersionsResponseItem = zod.object({
   createdAt: zod.string(),
 });
 export const GetPrdVersionsResponse = zod.array(GetPrdVersionsResponseItem);
+
+/**
+ * @summary Get a specific version snapshot with full content
+ */
+export const GetPrdVersionParams = zod.object({
+  id: zod.coerce.string(),
+  versionId: zod.coerce.number(),
+});
 
 /**
  * @summary Get a PRD by share token (public read-only)

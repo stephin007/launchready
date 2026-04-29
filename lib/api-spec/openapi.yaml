@@ -93,6 +93,25 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deletePrd
+      tags: [prds]
+      summary: Delete a PRD and all its data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: PRD deleted successfully
+        "404":
+          description: PRD not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /prds/{id}/regenerate:
     post:
@@ -175,6 +194,36 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/PrdVersion"
+
+  /prds/{id}/versions/{versionId}:
+    get:
+      operationId: getPrdVersion
+      tags: [prds]
+      summary: Get a specific version snapshot with full content
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Version snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrdVersionDetail"
+        "404":
+          description: Version not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /prds/share/{token}:
     get:
@@ -460,6 +509,26 @@ components:
         - prdId
         - versionNumber
         - createdAt
+
+    PrdVersionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        prdId:
+          type: string
+        versionNumber:
+          type: integer
+        createdAt:
+          type: string
+        content:
+          $ref: "#/components/schemas/PrdContent"
+      required:
+        - id
+        - prdId
+        - versionNumber
+        - createdAt
+        - content
 
     DayCount:
       type: object

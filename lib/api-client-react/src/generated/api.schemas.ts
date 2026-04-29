@@ -117,6 +117,14 @@ export interface PrdVersion {
   createdAt: string;
 }
 
+export interface PrdVersionDetail {
+  id: number;
+  prdId: string;
+  versionNumber: number;
+  createdAt: string;
+  content: PrdContent;
+}
+
 export interface DayCount {
   date: string;
   count: number;

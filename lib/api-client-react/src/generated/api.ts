@@ -24,6 +24,7 @@ import type {
   PrdDetail,
   PrdSummary,
   PrdVersion,
+  PrdVersionDetail,
   TaskStatusRecord,
   UpdateTaskStatusBody,
 } from "./api.schemas";
@@ -424,6 +425,169 @@ export const useRegeneratePrd = <
 > => {
   return useMutation(getRegeneratePrdMutationOptions(options));
 };
+
+/**
+ * @summary Delete a PRD and all its data
+ */
+export const getDeletePrdUrl = (id: string) => {
+  return `/api/prds/${id}`;
+};
+
+export const deletePrd = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePrdUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePrdMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePrd>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePrd>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deletePrd"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePrd>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+    return deletePrd(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePrdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePrd>>
+>;
+export type DeletePrdMutationError = ErrorType<ErrorResponse>;
+
+export const useDeletePrd = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePrd>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePrd>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeletePrdMutationOptions(options));
+};
+
+/**
+ * @summary Get a specific version snapshot with full content
+ */
+export const getGetPrdVersionUrl = (id: string, versionId: number) => {
+  return `/api/prds/${id}/versions/${versionId}`;
+};
+
+export const getPrdVersion = async (
+  id: string,
+  versionId: number,
+  options?: RequestInit,
+): Promise<PrdVersionDetail> => {
+  return customFetch<PrdVersionDetail>(getGetPrdVersionUrl(id, versionId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPrdVersionQueryKey = (id: string, versionId: number) => {
+  return [`/api/prds/${id}/versions/${versionId}`] as const;
+};
+
+export const getGetPrdVersionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPrdVersion>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  versionId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrdVersion>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPrdVersionQueryKey(id, versionId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrdVersion>>> = ({
+    signal,
+  }) => getPrdVersion(id, versionId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id && !!versionId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPrdVersion>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPrdVersionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPrdVersion>>
+>;
+export type GetPrdVersionQueryError = ErrorType<ErrorResponse>;
+
+export function useGetPrdVersion<
+  TData = Awaited<ReturnType<typeof getPrdVersion>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: string,
+  versionId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPrdVersion>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPrdVersionQueryOptions(id, versionId, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Update task status

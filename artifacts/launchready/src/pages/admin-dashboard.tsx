@@ -1,17 +1,40 @@
 import { Layout } from "@/components/layout";
-import { useGetAdminStats, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
+import { useGetAdminStats, getGetAdminStatsQueryKey, useListPrds, useDeletePrd } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useListPrds } from "@workspace/api-client-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format, parseISO } from "date-fns";
-import { Loader2, FileText, CheckCircle2, Link as LinkIcon, Eye, Zap } from "lucide-react";
+import { Loader2, FileText, CheckCircle2, Link as LinkIcon, Eye, Zap, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminDashboard() {
+  const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
   const { data: prds, isLoading: prdsLoading } = useListPrds();
+  const deletePrd = useDeletePrd();
+
+  const handleDelete = (prdId: string) => {
+    deletePrd.mutate({ id: prdId }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/prds"] });
+        queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() });
+      },
+    });
+  };
 
   if (statsLoading || prdsLoading) {
     return (
@@ -302,6 +325,36 @@ export default function AdminDashboard() {
                         <Link href={`/prd/${prd.id}`} className="text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors" title="View PRD">
                           <Eye size={16} />
                         </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              className="text-[var(--text-muted)] hover:text-[var(--status-danger)] transition-colors"
+                              title="Delete PRD"
+                              disabled={deletePrd.isPending}
+                            >
+                              {deletePrd.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-[var(--bg-card)] border-[var(--border-default)]">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-[var(--text-primary)]">Delete this PRD?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-[var(--text-muted)]">
+                                This will permanently delete <span className="text-[var(--text-primary)] font-medium">"{prd.title}"</span> and all its data. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-transparent border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]">
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(prd.id)}
+                                className="bg-[var(--status-danger)] hover:bg-[rgba(239,68,68,0.85)] text-white border-0"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -8,6 +8,7 @@ import { PrdDetail, TaskItem, UserStory, UpdateTaskStatusBodyStatus } from "@wor
 interface PrdContentDisplayProps {
   prd: PrdDetail;
   isShared?: boolean;
+  readOnly?: boolean;
   onUpdateTaskStatus?: (taskId: string, status: UpdateTaskStatusBodyStatus) => void;
 }
 
@@ -41,7 +42,7 @@ function StatusIcon({ status }: { status: string }) {
   return <Circle className="w-5 h-5" style={{ color: "var(--text-subtle)" }} />;
 }
 
-export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }: PrdContentDisplayProps) {
+export function PrdContentDisplay({ prd, isShared = false, readOnly = false, onUpdateTaskStatus }: PrdContentDisplayProps) {
   const { content } = prd;
 
   // Optimistic status overrides — applied instantly on click, confirmed when re-fetch lands
@@ -237,7 +238,7 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
                   return (
                     <div key={task.id} className="p-4 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-start gap-4">
                       <div className="pt-0.5 flex items-center justify-center">
-                        {isShared ? (
+                        {isShared || readOnly ? (
                           <StatusIcon status={status} />
                         ) : (
                           <button

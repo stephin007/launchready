@@ -9,6 +9,8 @@ import {
   UpdateTaskStatusBody,
   RegeneratePrdParams,
   GetPrdVersionsParams,
+  GetPrdVersionParams,
+  DeletePrdParams,
   GetSharedPrdParams,
 } from "@workspace/api-zod";
 import { callOpenRouter } from "../logic/openrouter";
@@ -279,6 +281,57 @@ router.get("/prds/:id/versions", async (req, res): Promise<void> => {
       createdAt: v.createdAt.toISOString(),
     }))
   );
+});
+
+router.get("/prds/:id/versions/:versionId", async (req, res): Promise<void> => {
+  const params = GetPrdVersionParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [version] = await db
+    .select()
+    .from(prdVersionsTable)
+    .where(
+      and(
+        eq(prdVersionsTable.prdId, params.data.id),
+        eq(prdVersionsTable.id, params.data.versionId)
+      )
+    );
+
+  if (!version) {
+    res.status(404).json({ error: "Version not found" });
+    return;
+  }
+
+  res.json({
+    id: version.id,
+    prdId: version.prdId,
+    versionNumber: version.versionNumber,
+    createdAt: version.createdAt.toISOString(),
+    content: JSON.parse(version.snapshot),
+  });
+});
+
+router.delete("/prds/:id", async (req, res): Promise<void> => {
+  const params = DeletePrdParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
+  if (!prd) {
+    res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  await db.delete(taskStatusTable).where(eq(taskStatusTable.prdId, params.data.id));
+  await db.delete(prdVersionsTable).where(eq(prdVersionsTable.prdId, params.data.id));
+  await db.delete(prdsTable).where(eq(prdsTable.id, params.data.id));
+
+  res.status(204).send();
 });
 
 export default router;
