@@ -1,9 +1,8 @@
-import { Fragment } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { CheckCircle2, ChevronDown, ChevronRight, Circle, Clock } from "lucide-react";
+import { CheckCircle2, ChevronRight, Circle } from "lucide-react";
 import { PrdDetail, TaskItem, UserStory, UpdateTaskStatusBodyStatus } from "@workspace/api-client-react";
 
 interface PrdContentDisplayProps {
@@ -12,8 +11,51 @@ interface PrdContentDisplayProps {
   onUpdateTaskStatus?: (taskId: string, status: UpdateTaskStatusBodyStatus) => void;
 }
 
+type Status = "todo" | "in-progress" | "done";
+
+const CYCLE: Record<Status, Status> = {
+  "todo": "in-progress",
+  "in-progress": "done",
+  "done": "todo",
+};
+
+function StatusIcon({ status }: { status: string }) {
+  if (status === "done") {
+    return <CheckCircle2 className="w-5 h-5" style={{ color: "var(--status-success)" }} />;
+  }
+  if (status === "in-progress") {
+    return (
+      <span
+        style={{
+          display: "block",
+          width: "20px",
+          height: "20px",
+          borderRadius: "50%",
+          backgroundColor: "var(--status-success)",
+          opacity: 0.85,
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return <Circle className="w-5 h-5" style={{ color: "var(--text-subtle)" }} />;
+}
+
 export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }: PrdContentDisplayProps) {
   const { content } = prd;
+
+  // Optimistic status overrides — applied instantly on click, confirmed when re-fetch lands
+  const [optimistic, setOptimistic] = useState<Record<string, Status>>({});
+
+  const getStatus = (task: TaskItem): Status =>
+    optimistic[task.id] ?? (task.status as Status) ?? "todo";
+
+  const handleCycle = (task: TaskItem) => {
+    const current = getStatus(task);
+    const next = CYCLE[current];
+    setOptimistic(prev => ({ ...prev, [task.id]: next }));
+    onUpdateTaskStatus?.(task.id, next as UpdateTaskStatusBodyStatus);
+  };
 
   // Group tasks by sprint
   const sprints: Record<number, { userStory: UserStory; task: TaskItem }[]> = {};
@@ -39,12 +81,6 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
     if (effort === "M") return "bg-[rgba(113,112,255,0.15)] text-[var(--effort-m)]";
     if (effort === "L") return "bg-[rgba(245,158,11,0.15)] text-[var(--effort-l)]";
     return "bg-[rgba(239,68,68,0.15)] text-[var(--effort-xl)]";
-  };
-
-  const StatusIcon = ({ status }: { status: string }) => {
-    if (status === "done") return <CheckCircle2 className="w-5 h-5 text-[var(--status-success)]" />;
-    if (status === "in-progress") return <Clock className="w-5 h-5 text-[var(--status-warning)]" />;
-    return <Circle className="w-5 h-5 text-[var(--text-muted)]" />;
   };
 
   return (
@@ -168,7 +204,7 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
 
       <div className="space-y-6">
         <h2 className="text-2xl font-medium text-[var(--text-primary)]">Sprint Plan</h2>
-        
+
         {sprintNumbers.map(sprintNum => (
           <Collapsible key={sprintNum} defaultOpen className="border border-[var(--border-default)] rounded-lg bg-[rgba(255,255,255,0.01)] overflow-hidden">
             <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[rgba(255,255,255,0.02)] transition-colors [&[data-state=open]>div>svg]:rotate-90">
@@ -182,49 +218,54 @@ export function PrdContentDisplay({ prd, isShared = false, onUpdateTaskStatus }:
             </CollapsibleTrigger>
             <CollapsibleContent className="border-t border-[var(--border-default)]">
               <div className="divide-y divide-[var(--border-subtle)]">
-                {sprints[sprintNum].map(({ userStory, task }) => (
-                  <div key={task.id} className="p-4 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-start gap-4">
-                    <div className="pt-1">
-                      {isShared ? (
-                        <StatusIcon status={task.status} />
-                      ) : (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] rounded-full">
-                            <StatusIcon status={task.status} />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="bg-[var(--bg-elevated)] border-[var(--border-default)]">
-                            <DropdownMenuItem onClick={() => onUpdateTaskStatus?.(task.id, "todo" as UpdateTaskStatusBodyStatus)}>
-                              <Circle className="w-4 h-4 mr-2 text-[var(--text-muted)]" /> Todo
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onUpdateTaskStatus?.(task.id, "in-progress" as UpdateTaskStatusBodyStatus)}>
-                              <Clock className="w-4 h-4 mr-2 text-[var(--status-warning)]" /> In Progress
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onUpdateTaskStatus?.(task.id, "done" as UpdateTaskStatusBodyStatus)}>
-                              <CheckCircle2 className="w-4 h-4 mr-2 text-[var(--status-success)]" /> Done
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center justify-between gap-4">
-                        <h4 className="text-base font-medium text-[var(--text-primary)] truncate">{task.title}</h4>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant="outline" className={`border-0 ${getPriorityColor(userStory.priority)}`}>
-                            {userStory.priority}
-                          </Badge>
-                          <Badge variant="outline" className={`border-0 rounded-full px-2.5 ${getEffortColor(task.effort)}`}>
-                            {task.effort}
-                          </Badge>
-                        </div>
+                {sprints[sprintNum].map(({ userStory, task }) => {
+                  const status = getStatus(task);
+                  return (
+                    <div key={task.id} className="p-4 hover:bg-[rgba(255,255,255,0.02)] transition-colors flex items-start gap-4">
+                      <div className="pt-0.5 flex items-center justify-center">
+                        {isShared ? (
+                          <StatusIcon status={status} />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleCycle(task)}
+                            className="flex items-center justify-center rounded-full transition-opacity hover:opacity-70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                            title={`Status: ${status} — click to advance`}
+                            data-testid={`status-toggle-${task.id}`}
+                          >
+                            <StatusIcon status={status} />
+                          </button>
+                        )}
                       </div>
-                      <p className="text-sm text-[var(--text-muted)]">{task.description}</p>
-                      <p className="text-xs text-[var(--text-subtle)] mt-2">
-                        Story: <span className="text-[var(--text-secondary)]">{userStory.title}</span>
-                      </p>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <h4
+                            className="text-base font-medium truncate"
+                            style={{
+                              color: status === "done" ? "var(--text-muted)" : "var(--text-primary)",
+                              textDecoration: status === "done" ? "line-through" : "none",
+                              textDecorationColor: "var(--text-subtle)",
+                            }}
+                          >
+                            {task.title}
+                          </h4>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="outline" className={`border-0 ${getPriorityColor(userStory.priority)}`}>
+                              {userStory.priority}
+                            </Badge>
+                            <Badge variant="outline" className={`border-0 rounded-full px-2.5 ${getEffortColor(task.effort)}`}>
+                              {task.effort}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-[var(--text-muted)]">{task.description}</p>
+                        <p className="text-xs text-[var(--text-subtle)] mt-2">
+                          Story: <span className="text-[var(--text-secondary)]">{userStory.title}</span>
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </Collapsible>
