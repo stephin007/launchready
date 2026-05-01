@@ -13,18 +13,25 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
-function buildAllowedOrigins(): string[] {
-  const origins: string[] = [];
-  if (process.env.FRONTEND_URL) {
-    origins.push(process.env.FRONTEND_URL);
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return true;
+  if (
+    origin.endsWith(".replit.dev") ||
+    origin.endsWith(".replit.app") ||
+    origin.endsWith(".kirk.replit.dev") ||
+    origin.endsWith(".repl.co")
+  ) {
+    return true;
   }
-  if (process.env.REPLIT_DEV_DOMAIN) {
-    origins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
-  }
-  return origins;
+  if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL)
+    return true;
+  if (
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1")
+  )
+    return true;
+  return false;
 }
-
-const allowedOrigins = buildAllowedOrigins();
 
 app.use(
   pinoHttp({
@@ -51,16 +58,13 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(
   cors({
     credentials: true,
-    origin:
-      allowedOrigins.length > 0
-        ? (origin, cb) => {
-            if (!origin || allowedOrigins.includes(origin)) {
-              cb(null, true);
-            } else {
-              cb(new Error("Not allowed by CORS"));
-            }
-          }
-        : true,
+    origin: (origin, cb) => {
+      if (isAllowedOrigin(origin ?? "")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Not allowed by CORS"));
+      }
+    },
   }),
 );
 app.use(express.json());
