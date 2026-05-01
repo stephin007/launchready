@@ -66,8 +66,6 @@ function UserMenu() {
 export function Layout({ children, isShared = false }: { children: ReactNode; isShared?: boolean }) {
   const [isAdmin] = useRoute("/admin");
   const [isGenerate] = useRoute("/generate");
-  const { user, isLoaded } = useUser();
-  const isAdminUser = isLoaded && (user?.publicMetadata as Record<string, unknown>)?.role === "admin";
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] flex flex-col font-sans">
@@ -106,11 +104,9 @@ export function Layout({ children, isShared = false }: { children: ReactNode; is
                   <Link href="/generate" className={`transition-colors ${isGenerate ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"}`}>
                     Generate
                   </Link>
-                  {isAdminUser && (
-                    <Link href="/admin" className={`transition-colors ${isAdmin ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"}`}>
-                      Dashboard
-                    </Link>
-                  )}
+                  <Link href="/admin" className={`transition-colors ${isAdmin ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"}`}>
+                    Dashboard
+                  </Link>
                 </nav>
                 <UserMenu />
               </Show>
