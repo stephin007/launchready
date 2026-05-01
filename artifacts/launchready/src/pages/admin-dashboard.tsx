@@ -1,5 +1,7 @@
 import { Layout } from "@/components/layout";
-import { useGetAdminStats, getGetAdminStatsQueryKey, useListPrds, useDeletePrd } from "@workspace/api-client-react";
+import { useGetAdminStats, getGetAdminStatsQueryKey, useDeletePrd, type PrdSummary } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@clerk/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -21,20 +23,55 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 
+function useAdminListPrds() {
+  return useQuery<(PrdSummary & { userId?: string })[]>({
+    queryKey: ["/api/admin/prds"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/prds", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch admin PRDs");
+      return res.json();
+    },
+  });
+}
+
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
+  const { user, isLoaded } = useUser();
   const { data: stats, isLoading: statsLoading } = useGetAdminStats();
-  const { data: prds, isLoading: prdsLoading } = useListPrds();
+  const { data: prds, isLoading: prdsLoading } = useAdminListPrds();
   const deletePrd = useDeletePrd();
+
+  const isAdmin = isLoaded && (user?.publicMetadata as Record<string, unknown>)?.role === "admin";
 
   const handleDelete = (prdId: string) => {
     deletePrd.mutate({ id: prdId }, {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/prds"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/prds"] });
         queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() });
       },
     });
   };
+
+  if (!isLoaded) {
+    return (
+      <Layout>
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)] mb-4" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Layout>
+        <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+          <p className="text-lg font-medium mb-2" style={{ color: "var(--text-primary)" }}>Access restricted</p>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>The admin dashboard is only available to administrators.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (statsLoading || prdsLoading) {
     return (

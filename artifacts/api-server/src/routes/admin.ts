@@ -1,10 +1,24 @@
-import { Router, type IRouter } from "express";
-import { db, prdsTable, taskStatusTable } from "@workspace/db";
-import { gte, sql, count } from "drizzle-orm";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+import { db, prdsTable } from "@workspace/db";
+import { getAuth } from "@clerk/express";
 
 const router: IRouter = Router();
 
-router.get("/admin/stats", async (_req, res): Promise<void> => {
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const auth = getAuth(req);
+  const userId = auth?.userId;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (auth?.sessionClaims?.publicMetadata?.role !== "admin") {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  next();
+}
+
+router.get("/admin/stats", requireAdmin, async (_req, res): Promise<void> => {
   const allPrds = await db.select().from(prdsTable);
 
   const totalPrds = allPrds.length;
@@ -37,7 +51,6 @@ router.get("/admin/stats", async (_req, res): Promise<void> => {
         }
       }
     } catch {
-      // skip malformed
     }
   }
 

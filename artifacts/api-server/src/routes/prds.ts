@@ -1,7 +1,8 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { db, prdsTable, taskStatusTable, prdVersionsTable } from "@workspace/db";
-import { eq, and, desc, sql, gte, count } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
 import {
   GeneratePrdBody,
   GetPrdParams,
@@ -17,6 +18,39 @@ import { callOpenRouter } from "../logic/openrouter";
 import { processPrd } from "../logic/prdProcessor";
 
 const router: IRouter = Router();
+
+function getClerkUserId(req: Request): string | null {
+  return getAuth(req)?.userId ?? null;
+}
+
+function isClerkAdmin(req: Request): boolean {
+  const auth = getAuth(req);
+  return auth?.sessionClaims?.publicMetadata?.role === "admin";
+}
+
+function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  const userId = getClerkUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  req.userId = userId;
+  next();
+}
+
+function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  const userId = getClerkUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!isClerkAdmin(req)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  req.userId = userId;
+  next();
+}
 
 function buildPrdDetail(prd: typeof prdsTable.$inferSelect, taskStatuses: typeof taskStatusTable.$inferSelect[]) {
   const content = JSON.parse(prd.rawOutput) as ReturnType<typeof processPrd>;
@@ -47,7 +81,7 @@ function buildPrdDetail(prd: typeof prdsTable.$inferSelect, taskStatuses: typeof
   };
 }
 
-router.post("/generate", async (req, res): Promise<void> => {
+router.post("/generate", requireAuth, async (req, res): Promise<void> => {
   const parsed = GeneratePrdBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -55,6 +89,7 @@ router.post("/generate", async (req, res): Promise<void> => {
   }
 
   const { problem, audience, success, productName } = parsed.data;
+  const userId = req.userId!;
 
   req.log.info({ problem, audience }, "Generating PRD");
 
@@ -66,6 +101,7 @@ router.post("/generate", async (req, res): Promise<void> => {
 
   const [prd] = await db.insert(prdsTable).values({
     id,
+    userId,
     title: processedContent.title,
     problem,
     audience,
@@ -86,7 +122,40 @@ router.post("/generate", async (req, res): Promise<void> => {
   res.status(201).json(buildPrdDetail(prd, taskStatuses));
 });
 
-router.get("/prds", async (_req, res): Promise<void> => {
+router.get("/prds", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.userId!;
+
+  const prds = await db
+    .select()
+    .from(prdsTable)
+    .where(eq(prdsTable.userId, userId))
+    .orderBy(desc(prdsTable.createdAt));
+
+  const results = prds.map((prd) => {
+    const content = JSON.parse(prd.rawOutput) as ReturnType<typeof processPrd>;
+    const allTasks = content.userStories.flatMap((s) => s.tasks);
+    const priorityMix = { P1: 0, P2: 0, P3: 0 };
+    content.userStories.forEach((story) => {
+      const p = story.priority as keyof typeof priorityMix;
+      if (p in priorityMix) priorityMix[p]++;
+    });
+
+    return {
+      id: prd.id,
+      title: prd.title,
+      problem: prd.problem,
+      productName: prd.productName,
+      shareToken: prd.shareToken,
+      createdAt: prd.createdAt.toISOString(),
+      totalTasks: allTasks.length,
+      priorityMix,
+    };
+  });
+
+  res.json(results);
+});
+
+router.get("/admin/prds", requireAdmin, async (_req, res): Promise<void> => {
   const prds = await db.select().from(prdsTable).orderBy(desc(prdsTable.createdAt));
 
   const results = prds.map((prd) => {
@@ -104,6 +173,7 @@ router.get("/prds", async (_req, res): Promise<void> => {
       problem: prd.problem,
       productName: prd.productName,
       shareToken: prd.shareToken,
+      userId: prd.userId,
       createdAt: prd.createdAt.toISOString(),
       totalTasks: allTasks.length,
       priorityMix,
@@ -130,16 +200,24 @@ router.get("/prds/share/:token", async (req, res): Promise<void> => {
   res.json(buildPrdDetail(prd, taskStatuses));
 });
 
-router.get("/prds/:id", async (req, res): Promise<void> => {
+router.get("/prds/:id", requireAuth, async (req, res): Promise<void> => {
   const params = GetPrdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
+
   const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
   if (!prd) {
     res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -147,16 +225,24 @@ router.get("/prds/:id", async (req, res): Promise<void> => {
   res.json(buildPrdDetail(prd, taskStatuses));
 });
 
-router.post("/prds/:id/regenerate", async (req, res): Promise<void> => {
+router.post("/prds/:id/regenerate", requireAuth, async (req, res): Promise<void> => {
   const params = RegeneratePrdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
+
   const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
   if (!prd) {
     res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -200,7 +286,7 @@ router.post("/prds/:id/regenerate", async (req, res): Promise<void> => {
   res.json(buildPrdDetail(updated, []));
 });
 
-router.patch("/prds/:id/tasks/:taskId", async (req, res): Promise<void> => {
+router.patch("/prds/:id/tasks/:taskId", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateTaskStatusParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -215,11 +301,17 @@ router.patch("/prds/:id/tasks/:taskId", async (req, res): Promise<void> => {
 
   const { id: prdId, taskId } = params.data;
   const { status } = body.data;
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
 
-  // Verify PRD exists and taskId is a valid task within it
   const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, prdId));
   if (!prd) {
     res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -260,10 +352,24 @@ router.patch("/prds/:id/tasks/:taskId", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/prds/:id/versions", async (req, res): Promise<void> => {
+router.get("/prds/:id/versions", requireAuth, async (req, res): Promise<void> => {
   const params = GetPrdVersionsParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
+
+  const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
+  if (!prd) {
+    res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -283,10 +389,24 @@ router.get("/prds/:id/versions", async (req, res): Promise<void> => {
   );
 });
 
-router.get("/prds/:id/versions/:versionId", async (req, res): Promise<void> => {
+router.get("/prds/:id/versions/:versionId", requireAuth, async (req, res): Promise<void> => {
   const params = GetPrdVersionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
+
+  const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
+  if (!prd) {
+    res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -314,16 +434,24 @@ router.get("/prds/:id/versions/:versionId", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/prds/:id", async (req, res): Promise<void> => {
+router.delete("/prds/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeletePrdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  const userId = req.userId!;
+  const admin = isClerkAdmin(req);
+
   const [prd] = await db.select().from(prdsTable).where(eq(prdsTable.id, params.data.id));
   if (!prd) {
     res.status(404).json({ error: "PRD not found" });
+    return;
+  }
+
+  if (!admin && prd.userId !== userId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 

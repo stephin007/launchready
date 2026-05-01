@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const prdsTable = pgTable("prds", {
   id: text("id").primaryKey(),
+  userId: text("user_id"),
   title: text("title").notNull(),
   problem: text("problem"),
   audience: text("audience"),
